@@ -4,4 +4,5 @@ const nextConfig = {
     serverComponentsExternalPackages: ['@supabase/ssr'],
   }
 };
+
 module.exports = nextConfig;

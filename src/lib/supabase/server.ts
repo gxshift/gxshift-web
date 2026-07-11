@@ -1,31 +1,37 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { createClient as createCoreClient } from '@supabase/supabase-js';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 
-// Client untuk operasi yang terikat dengan RLS sesi user
-export async function createClient() {
-  const cookieStore = await cookies();
+// Trik Placeholder: Memberikan nilai bohongan saat Next.js melakukan npm run build
+// sehingga tidak akan terjadi error "supabaseUrl is required".
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
+
+// 1. Client standar untuk SSR (Bisa membaca session/cookies user)
+export function createClient() {
+  const cookieStore = cookies();
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
-        get(name: string) { 
-          return cookieStore.get(name)?.value; 
+        get(name: string) {
+          return cookieStore.get(name)?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
-          try { 
-            cookieStore.set({ name, value, ...options }); 
+          try {
+            cookieStore.set({ name, value, ...options });
           } catch (error) {
-            // Error ini wajar jika dipanggil dari Server Component
+            // Abaikan error saat dipanggil dari Server Component
           }
         },
         remove(name: string, options: CookieOptions) {
-          try { 
-            cookieStore.set({ name, value: '', ...options }); 
+          try {
+            cookieStore.set({ name, value: '', ...options });
           } catch (error) {
-            // Error ini wajar jika dipanggil dari Server Component
+            // Abaikan
           }
         },
       },
@@ -33,10 +39,12 @@ export async function createClient() {
   );
 }
 
-// Client Admin (Service Role) untuk by-pass RLS (hanya dipakai di Server Actions/Edge API internal)
+// 2. Client Admin khusus untuk Webhook & Background Jobs (Bypass RLS)
 export function createAdminClient() {
-  return createCoreClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  return createSupabaseClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
 }

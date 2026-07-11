@@ -1,5 +1,7 @@
 import './globals.css';
 import { Inter } from 'next/font/google';
+export const dynamic = 'force-dynamic';
+import type { Metadata } from 'next';
 
 const inter = Inter({ subsets: ['latin'] });
 

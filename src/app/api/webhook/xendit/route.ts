@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/server';
 import { handlePaymentSuccess } from '@/lib/services/orderService';
 
 export const runtime = 'edge';
+export const dynamic = 'force-dynamic'; // <--- BARIS SAKTI INI MENCEGAH ERROR SAAT BUILD
 
 export async function POST(req: NextRequest) {
   const supabaseAdmin = createAdminClient();
